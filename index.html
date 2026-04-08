@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>حاسبة مدى السيارات الكهربائية</title>
+    
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#e0e5ec">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e0e5ec;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; color: #333;
+            /* منع تحديد النص لتجربة تشبه التطبيقات */
+            user-select: none; 
+            -webkit-user-select: none;
+        }
+        .card {
+            background: #e0e5ec; padding: 30px; border-radius: 20px;
+            box-shadow: 9px 9px 16px rgb(163,177,198,0.6), -9px -9px 16px rgba(255,255,255, 0.5);
+            width: 90%; max-width: 400px;
+        }
+        h2 { text-align: center; color: #2c3e50; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input[type="range"], input[type="number"] {
+            width: 100%; box-sizing: border-box; padding: 10px; border-radius: 10px; border: none; background: #e0e5ec;
+            box-shadow: inset 6px 6px 10px 0 rgba(163,177,198, 0.7), inset -6px -6px 10px 0 rgba(255,255,255, 0.8); outline: none;
+        }
+        .value-display { text-align: left; font-weight: bold; color: #2980b9; margin-top: 5px; display: block; }
+        
+        .battery-container {
+            width: 100%; height: 40px; background: #d1d9e6; border-radius: 10px; margin-bottom: 20px; position: relative;
+            box-shadow: inset 4px 4px 8px rgba(163,177,198,0.8), inset -4px -4px 8px rgba(255,255,255,0.8); border: 2px solid #bdc3c7;
+        }
+        .battery-container::after {
+            content: ''; position: absolute; left: -8px; top: 10px; width: 8px; height: 20px; background: #bdc3c7; border-radius: 5px 0 0 5px;
+        }
+        .battery-level {
+            height: 100%; width: 100%; background: linear-gradient(to bottom, #2ecc71, #27ae60); border-radius: 8px;
+            transition: width 0.4s ease, background-color 0.4s ease; box-shadow: inset 0px 5px 5px rgba(255,255,255,0.4);
+        }
+
+        .buttons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        button {
+            padding: 10px; border: none; border-radius: 10px; background: #e0e5ec; color: #2c3e50; font-weight: bold; cursor: pointer;
+            box-shadow: 4px 4px 8px rgba(163,177,198,0.7), -4px -4px 8px rgba(255,255,255, 0.7); transition: all 0.2s ease;
+        }
+        button:active { box-shadow: inset 4px 4px 8px rgba(163,177,198,0.7), inset -4px -4px 8px rgba(255,255,255, 0.7); }
+        
+        .result-box {
+            text-align: center; padding: 20px; border-radius: 15px; background: #e0e5ec;
+            box-shadow: inset 6px 6px 10px 0 rgba(163,177,198, 0.7), inset -6px -6px 10px 0 rgba(255,255,255, 0.8);
+        }
+        .result-box h3 { margin: 0 0 10px 0; color: #7f8c8d; font-size: 1.1em; }
+        .result-box span { font-size: 2.5em; font-weight: bold; color: #27ae60; text-shadow: 2px 2px 4px rgba(163,177,198,0.5); }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>حاسبة المدى الكهربائي</h2>
+
+    <div class="battery-container">
+        <div class="battery-level" id="batteryLevel"></div>
+    </div>
+
+    <div class="input-group">
+        <label>سعة البطارية (كيلو واط)</label>
+        <input type="number" id="capacity" value="47.78" step="0.1">
+    </div>
+
+    <div class="input-group">
+        <label>نسبة الشحن الحالية (%)</label>
+        <input type="range" id="charge" min="1" max="100" value="100">
+        <span class="value-display" id="chargeVal">100%</span>
+    </div>
+
+    <div class="input-group">
+        <label>معدل الاستهلاك (كيلو واط/100كم)</label>
+        <input type="range" id="consumption" min="8" max="35" step="0.1" value="15.5">
+        <span class="value-display" id="consumptionVal">15.5</span>
+    </div>
+
+    <div class="buttons-grid">
+        <button onclick="setConsumption(13.5)">مدينة (هادئة)</button>
+        <button onclick="setConsumption(15.5)">استخدام مختلط</button>
+        <button onclick="setConsumption(17.5)">طريق سريع</button>
+        <button onclick="setConsumption(19.5)">شتاء (تدفئة)</button>
+    </div>
+
+    <div class="result-box">
+        <h3>المسافة المتوقعة</h3>
+        <span id="result">308</span> كم
+    </div>
+</div>
+
+<script>
+    const capacityInput = document.getElementById('capacity');
+    const chargeInput = document.getElementById('charge');
+    const consumptionInput = document.getElementById('consumption');
+    const chargeVal = document.getElementById('chargeVal');
+    const consumptionVal = document.getElementById('consumptionVal');
+    const resultDisplay = document.getElementById('result');
+    const batteryLevel = document.getElementById('batteryLevel');
+
+    function calculateRange() {
+        const capacity = parseFloat(capacityInput.value);
+        const charge = parseFloat(chargeInput.value);
+        const consumption = parseFloat(consumptionInput.value);
+
+        if(capacity > 0 && consumption > 0) {
+            const range = (capacity * (charge / 100) / consumption) * 100;
+            resultDisplay.innerText = Math.round(range);
+        }
+
+        chargeVal.innerText = charge + '%';
+        consumptionVal.innerText = consumption;
+        
+        batteryLevel.style.width = charge + '%';
+        if(charge > 60) { batteryLevel.style.background = 'linear-gradient(to bottom, #2ecc71, #27ae60)'; }
+        else if (charge > 20) { batteryLevel.style.background = 'linear-gradient(to bottom, #f1c40f, #f39c12)'; }
+        else { batteryLevel.style.background = 'linear-gradient(to bottom, #e74c3c, #c0392b)'; }
+    }
+
+    function setConsumption(val) {
+        consumptionInput.value = val;
+        calculateRange();
+    }
+
+    capacityInput.addEventListener('input', calculateRange);
+    chargeInput.addEventListener('input', calculateRange);
+    consumptionInput.addEventListener('input', calculateRange);
+
+    calculateRange();
+
+    // تشغيل الـ Service Worker ليعمل التطبيق بدون إنترنت
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Service Worker Registered'))
+                .catch(err => console.log('Service Worker Error', err));
+        });
+    }
+</script>
+
+</body>
+</html>
